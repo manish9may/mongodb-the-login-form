@@ -1,10 +1,13 @@
 const Product = require("../models/product");
+const { validationResult } = require("express-validator");
 
 exports.getAddProduct = (req, res, next) => {
   res.render("admin/edit-product", {
     pageTitle: "Add Product",
     path: "/admin/add-product",
     editing: false,
+    validationErros: [],
+    errorMessage: undefined,
   });
 };
 
@@ -13,6 +16,17 @@ exports.postAddProduct = (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
+  const e = validationResult(req);
+
+  if (!e.isEmpty()) {
+    return res.render("admin/edit-product", {
+      pageTitle: "Add Product",
+      path: "/admin/add-product",
+      editing: false,
+      validationErros: e.array(),
+      errorMessage: e.array()[0].msg,
+    });
+  }
   const product = new Product({
     title: title,
     price: price,
