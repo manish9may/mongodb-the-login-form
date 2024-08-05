@@ -2,6 +2,8 @@ const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 
+const { validationResult } = require("express-validator");
+
 exports.getLogin = (req, res, next) => {
   res.render("auth/login", {
     path: "/login",
@@ -14,7 +16,8 @@ exports.getSignup = (req, res, next) => {
   res.render("auth/signup", {
     path: "/signup",
     pageTitle: "Signup",
-    errorMessage: req.flash("error")[0],
+    errorMessage: undefined,
+    validationErros: [],
   });
 };
 
@@ -52,22 +55,24 @@ exports.postLogin = (req, res, next) => {
 exports.postSignup = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
-  const confirmPassword = req.body.confirmPassword;
-
-  User.findOne({ email: email })
-    .then((userDoc) => {
-      if (userDoc) {
-        req.flash("error", "Email exists already.");
-        return res.redirect("/signup");
-      }
-      return bcrypt.hash(password, 12).then((hashPassword) => {
-        const user = new User({
-          email: email,
-          password: hashPassword,
-          cart: { items: [] },
-        });
-        return user.save();
+  const e = validationResult(req);
+  if (!e.isEmpty()) {
+    return res.status(442).render("auth/signup", {
+      path: "/signup",
+      pageTitle: "Signup",
+      errorMessage: e.array()[0].msg,
+      validationErros: e.array(),
+    });
+  }
+  return bcrypt
+    .hash(password, 12)
+    .then((hashPassword) => {
+      const user = new User({
+        email: email,
+        password: hashPassword,
+        cart: { items: [] },
       });
+      return user.save();
     })
     .then((result) => {
       res.redirect("/login");
