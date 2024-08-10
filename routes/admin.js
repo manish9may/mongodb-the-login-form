@@ -21,7 +21,7 @@ router.post(
   "/add-product",
   [
     body("title", "Invalid title").isLength({ min: 3 }).trim(),
-    body("imageUrl", "Invalid imageUrl").isURL(),
+    // body("imageUrl", "Invalid imageUrl").isURL(),
     body("description", "Invalid description")
       .isLength({ min: 3, max: 400 })
       .trim(),

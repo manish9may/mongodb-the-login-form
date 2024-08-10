@@ -13,10 +13,21 @@ exports.getAddProduct = (req, res, next) => {
 
 exports.postAddProduct = (req, res, next) => {
   const title = req.body.title;
-  const imageUrl = req.body.imageUrl;
+  const image = req.file;
   const price = req.body.price;
   const description = req.body.description;
   const e = validationResult(req);
+  if (!image) {
+    return res.render("admin/edit-product", {
+      pageTitle: "Add Product",
+      path: "/admin/add-product",
+      editing: false,
+      validationErros: [],
+      errorMessage: "Attach file is not an image.",
+    });
+  }
+
+  const imageUrl = image.path;
 
   if (!e.isEmpty()) {
     return res.render("admin/edit-product", {
@@ -62,6 +73,8 @@ exports.getEditProduct = (req, res, next) => {
         path: "/admin/edit-product",
         editing: editMode,
         product: product,
+        validationErros: [],
+        errorMessage: undefined,
       });
     })
     .catch((err) => console.log(err));
@@ -71,15 +84,18 @@ exports.postEditProduct = (req, res, next) => {
   const prodId = req.body.productId;
   const updatedTitle = req.body.title;
   const updatedPrice = req.body.price;
-  const updatedImageUrl = req.body.imageUrl;
   const updatedDesc = req.body.description;
 
+  const image = req.image;
   Product.findById(prodId)
     .then((product) => {
       product.title = updatedTitle;
       product.price = updatedPrice;
       product.description = updatedDesc;
-      product.imageUrl = updatedImageUrl;
+      if (image) {
+        product.imageUrl = image.path;
+      }
+
       return product.save();
     })
     .then((result) => {

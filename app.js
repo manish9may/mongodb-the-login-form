@@ -14,6 +14,8 @@ const flash = require("connect-flash");
 const errorController = require("./controllers/error");
 const User = require("./models/user");
 
+const multer = require("multer");
+
 const app = express();
 
 const csurfProtection = csurf();
@@ -26,8 +28,28 @@ const shopRoutes = require("./routes/shop");
 const authRoutes = require("./routes/auth");
 const connect = require("mongodb");
 
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "images");
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + "-" + file.originalname);
+  },
+});
+const fileFilter = (req, file, cb) => {
+  if (["image/png", "image/jpg", "image/jpeg"].includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/images", express.static(path.join(__dirname, "images")));
+app.use(
+  multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
+);
 
 const MONGODB_URI =
   process.env.MONGODB_URI || "mongodb://localhost:27017/mongoose_node";
@@ -49,7 +71,6 @@ app.use(
 
 app.use(csurfProtection);
 app.use(flash());
-
 app.use((req, res, next) => {
   if (req.session.user) {
     User.findById(req.session.user._id)
@@ -76,6 +97,13 @@ app.use(shopRoutes);
 app.use(authRoutes);
 
 app.use(errorController.get404);
+
+app.use((err, req, res, next) => {
+  res.status(500).render("500", {
+    pageTitle: "Page Not Found",
+    path: "/404",
+  });
+});
 
 mongoose
   .connect(MONGODB_URI)

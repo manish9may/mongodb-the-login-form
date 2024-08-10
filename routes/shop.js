@@ -28,4 +28,6 @@ router.post("/create-order", authMiddleware, shopController.postOrder);
 
 router.get("/orders", authMiddleware, shopController.getOrders);
 
+router.get("/orders/:orderId", authMiddleware, shopController.getInvoice);
+
 module.exports = router;
